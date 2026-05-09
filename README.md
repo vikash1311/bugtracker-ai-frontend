@@ -1,70 +1,159 @@
-# Getting Started with Create React App
+# 🐛 BugTracker AI — Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+> **AI-powered bug tracking with smart triage, duplicate detection, and automated reproduction steps.**  
+> Built with React.js · Redux · Tailwind CSS · OpenAI API
 
-## Available Scripts
+🔗 **Backend Repo:** [bugtracker-ai-backend](https://github.com/vikash1311/bugtracker-ai)
 
-In the project directory, you can run:
+---
 
-### `npm start`
+## 🚀 Live Demo
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+🔗 **[View Live App](https://your-live-url.com)**
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+👤 **Demo Credentials:**
+| Role | Email | Password |
+|------|-------|----------|
+| Admin | admin@bugtracker.com | Admin@123 |
+| Developer | dev@bugtracker.com | Dev@123 |
+| Tester | tester@bugtracker.com | Tester@123 |
 
-### `npm test`
+---
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## 📸 Screenshots
 
-### `npm run build`
+| Login | Dashboard |
+|-------|-----------|
+| ![Login](./screenshots/login.png) | ![Dashboard](./screenshots/dashboard.png) |
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+| Report Bug (AI Triage) | Projects |
+|------------------------|----------|
+| ![Report Bug](./screenshots/report-bug.png) | ![Projects](./screenshots/projects.png) |
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+| User Management |
+|----------------|
+| ![Users](./screenshots/users.png) |
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+---
 
-### `npm run eject`
+## ✨ Features
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### 🤖 AI-Powered Triage
+- **Suggest Priority** — AI auto-suggests bug severity from plain language description
+- **Check Duplicate** — detects similar existing bugs before submission
+- **Generate Steps** — auto-generates developer-ready reproduction steps
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### 🔐 Role-Based Views
+| Role | What They See |
+|------|--------------|
+| **Admin** | Dashboard, Projects, Report Bug, User Management |
+| **Developer** | Dashboard, Projects, Report Bug |
+| **Tester** | Dashboard, Projects, Report Bug |
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### 📊 Dashboard
+- Real-time bug stats — Total, Open, In Progress, Resolved, Closed
+- Bug Status donut chart
+- Project quick-access list
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### 🌙 Dark Mode
+- Full dark/light mode toggle — persists across sessions
 
-## Learn More
+---
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## 🛠️ Tech Stack
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+| Technology | Purpose |
+|-----------|---------|
+| React.js | UI framework |
+| Redux | Global state management |
+| Tailwind CSS | Styling |
+| React Router | Client-side routing |
+| Axios | API calls to backend |
+| Recharts | Dashboard charts |
+| OpenAI API | AI triage features |
+| Netlify | Deployment |
 
-### Code Splitting
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## 📁 Project Structure
 
-### Analyzing the Bundle Size
+```
+frontend/
+├── public/
+└── src/
+    ├── components/
+    │   ├── Navbar.jsx
+    │   ├── Sidebar.jsx
+    │   ├── BugCard.jsx
+    │   └── AITriagePanel.jsx
+    ├── pages/
+    │   ├── Login.jsx
+    │   ├── Dashboard.jsx
+    │   ├── Projects.jsx
+    │   ├── ReportBug.jsx
+    │   └── Users.jsx
+    ├── store/
+    │   ├── store.js
+    │   ├── authSlice.js
+    │   └── bugSlice.js
+    ├── api/
+    │   └── axiosConfig.js
+    └── App.jsx
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+---
 
-### Making a Progressive Web App
+## ⚡ Getting Started
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+### Prerequisites
+- Node.js 18+
+- Backend running locally or deployed
 
-### Advanced Configuration
+### Installation
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+```bash
+git clone https://github.com/yourusername/bugtracker-frontend
+cd bugtracker-frontend
+npm install
+```
 
-### Deployment
+### Environment Variables
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+```bash
+cp .env.example .env
+```
 
-### `npm run build` fails to minify
+```env
+VITE_API_BASE_URL=http://localhost:8080
+VITE_OPENAI_API_KEY=your_openai_key
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+### Run
+
+```bash
+npm run dev
+```
+
+App runs at `http://localhost:5173`
+
+---
+
+## 🔗 Related
+
+- 🔧 **Backend Repo:** [bugtracker-ai-backend](https://github.com/vikash1311/bugtracker-ai)
+- 🌐 **Live App:** [your-live-url.com](https://your-live-url.com)
+- 👤 **Portfolio:** [yourportfolio.com](https://vikash-gautam.netlify.app)
+
+---
+
+## 👨‍💻 Author
+
+**Vikash Gautam** — Full Stack Developer  
+📧 gautam7.ven@gmail.com  
+🔗 [LinkedIn](https://linkedin.com/in/vikash2808) · [Portfolio](https://vikash-gautam.netlify.app) · [GitHub](https://github.com/vikash1311)
+
+---
+
+## 📄 License
+
+MIT License
