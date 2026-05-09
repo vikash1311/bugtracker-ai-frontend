@@ -112,8 +112,8 @@ frontend/
 ### Installation
 
 ```bash
-git clone https://github.com/yourusername/bugtracker-frontend
-cd bugtracker-frontend
+git clone https://github.com/vikash1311/bugtracker-ai-frontend
+cd bugtracker-ai-frontend
 npm install
 ```
 
