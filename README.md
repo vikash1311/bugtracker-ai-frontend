@@ -3,6 +3,7 @@
 > **AI-powered bug tracking with smart triage, duplicate detection, and automated reproduction steps.**  
 > Built with React.js · Redux · Tailwind CSS · OpenAI API
 
+![Dashboard Preview](./screenshots/dashboard.png)
 🔗 **Backend Repo:** [bugtracker-ai-backend](https://github.com/vikash1311/bugtracker-ai)
 
 ---
