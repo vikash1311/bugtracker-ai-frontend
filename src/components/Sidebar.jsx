@@ -7,7 +7,7 @@ import { getTheme } from '../utils/theme';
 import {
   FiBug, FiHome, FiFolder, FiUsers,
   FiLogOut, FiChevronLeft, FiChevronRight,
-  FiSun, FiMoon
+  FiSun, FiMoon, FiAlertCircle
 } from 'react-icons/fi';
 
 const Sidebar = () => {
@@ -23,7 +23,7 @@ const Sidebar = () => {
   const navItems = [
     { icon: FiHome, label: 'Dashboard', path: '/' },
     { icon: FiFolder, label: 'Projects', path: '/projects' },
-    { icon: FiAlertCircle, label: 'Report Bug', path: '/bugs/create',
+    { icon: FiBug, label: 'Report Bug', path: '/bugs/create',
       roles: ['TESTER', 'ADMIN'] },
     { icon: FiUsers, label: 'Users', path: '/users',
       roles: ['ADMIN'] },
@@ -54,7 +54,7 @@ const Sidebar = () => {
           display: 'flex', alignItems: 'center',
           justifyContent: 'center', flexShrink: 0,
         }}>
-          <FiAlertCircle color="#fff" size={18} />
+          <FiBug color="#fff" size={18} />
         </div>
         <AnimatePresence>
           {!collapsed && (
