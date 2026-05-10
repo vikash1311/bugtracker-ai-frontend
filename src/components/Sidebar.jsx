@@ -23,7 +23,7 @@ const Sidebar = () => {
   const navItems = [
     { icon: FiHome, label: 'Dashboard', path: '/' },
     { icon: FiFolder, label: 'Projects', path: '/projects' },
-    { icon: Fizap, label: 'Report Bug', path: '/bugs/create',
+    { icon: FiZap, label: 'Report Bug', path: '/bugs/create',
       roles: ['TESTER', 'ADMIN'] },
     { icon: FiUsers, label: 'Users', path: '/users',
       roles: ['ADMIN'] },
