@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { getTheme } from '../utils/theme';
 import {
-  FiBug, FiHome, FiFolder, FiUsers,
+  FiZap, FiHome, FiFolder, FiUsers,
   FiLogOut, FiChevronLeft, FiChevronRight,
   FiSun, FiMoon, FiAlertCircle
 } from 'react-icons/fi';
@@ -23,7 +23,7 @@ const Sidebar = () => {
   const navItems = [
     { icon: FiHome, label: 'Dashboard', path: '/' },
     { icon: FiFolder, label: 'Projects', path: '/projects' },
-    { icon: FiBug, label: 'Report Bug', path: '/bugs/create',
+    { icon: Fizap, label: 'Report Bug', path: '/bugs/create',
       roles: ['TESTER', 'ADMIN'] },
     { icon: FiUsers, label: 'Users', path: '/users',
       roles: ['ADMIN'] },
@@ -54,7 +54,7 @@ const Sidebar = () => {
           display: 'flex', alignItems: 'center',
           justifyContent: 'center', flexShrink: 0,
         }}>
-          <FiBug color="#fff" size={18} />
+          <FiZap color="#fff" size={18} />
         </div>
         <AnimatePresence>
           {!collapsed && (
