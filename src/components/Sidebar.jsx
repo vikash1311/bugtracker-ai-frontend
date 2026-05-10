@@ -7,7 +7,7 @@ import { getTheme } from '../utils/theme';
 import {
   FiZap, FiHome, FiFolder, FiUsers,
   FiLogOut, FiChevronLeft, FiChevronRight,
-  FiSun, FiMoon, FiAlertCircle
+  FiSun, FiMoon
 } from 'react-icons/fi';
 
 const Sidebar = () => {
