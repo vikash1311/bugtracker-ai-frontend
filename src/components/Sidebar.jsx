@@ -5,9 +5,9 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { getTheme } from '../utils/theme';
 import {
-  FiAlertCircle, FiHome, FiFolder, FiUsers,
+  FiBug, FiHome, FiFolder, FiUsers,
   FiLogOut, FiChevronLeft, FiChevronRight,
-  FiSun, FiMoon, FiPlus
+  FiSun, FiMoon
 } from 'react-icons/fi';
 
 const Sidebar = () => {
