@@ -58,7 +58,7 @@ const Login = () => {
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.8 }}
         style={{
-          flex: 1, display: 'flex', flexDirection: 'column',
+          flex: 1, flexDirection: 'column',
           justifyContent: 'center', padding: '60px',
           display: window.innerWidth < 768 ? 'none' : 'flex',
         }}>
