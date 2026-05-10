@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 const axiosInstance = axios.create({
-  baseURL: 'http://localhost:8080/api',
+  //baseURL: 'http://localhost:8080/api',
+  baseURL: 'https://bugtracker-ai.onrender.com/api',
   headers: {
     'Content-Type': 'application/json',
   },
