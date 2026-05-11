@@ -17,12 +17,24 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    
+    // Show waking up message after 5 seconds
+    const wakeTimer = setTimeout(() => {
+      setError('⏳ Server is waking up from sleep mode... This may take 30-60 seconds on first load. Please wait.');
+    }, 5000);
+  
     try {
       const res = await axiosInstance.post('/auth/login', form);
+      clearTimeout(wakeTimer);
       login(res.data.data);
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.message || 'Invalid credentials');
+      clearTimeout(wakeTimer);
+      if (err.code === 'ECONNABORTED' || !err.response) {
+        setError('⏳ Server is waking up... Please try again in 30 seconds.');
+      } else {
+        setError(err.response?.data?.message || 'Invalid credentials');
+      }
     } finally {
       setLoading(false);
     }
@@ -241,7 +253,7 @@ const Login = () => {
                 fontSize: 15, fontWeight: 600, cursor: 'pointer',
                 boxShadow: '0 4px 20px rgba(59,130,246,0.3)',
               }}>
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? '⏳ Connecting...' : 'Sign In'}
             </motion.button>
           </form>
 
