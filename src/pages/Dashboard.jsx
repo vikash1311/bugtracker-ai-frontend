@@ -95,19 +95,26 @@ const Dashboard = () => {
     { name: 'Closed', value: stats.closed, color: '#64748b' },
   ].filter(d => d.value > 0);
 
-  if (loading) return (
-    <div style={{ display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-      gap: 16 }}>
-      {[1,2,3,4,5,6].map(i => (
-        <motion.div key={i}
-          animate={{ opacity: [0.5, 1, 0.5] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
-          style={{ height: 120, backgroundColor: t.bgSecondary,
-            borderRadius: 16 }} />
-      ))}
-    </div>
-  );
+if (loading) return (
+  <div style={{
+    display: 'flex', flexDirection: 'column',
+    alignItems: 'center', justifyContent: 'center',
+    minHeight: '60vh', gap: 16,
+  }}>
+    <motion.div
+      animate={{ rotate: 360 }}
+      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+      style={{
+        width: 48, height: 48, borderRadius: '50%',
+        border: '3px solid #3b82f6',
+        borderTopColor: 'transparent',
+      }}
+    />
+    <p style={{ color: t.textSecondary, fontSize: 14 }}>
+      Loading dashboard...
+    </p>
+  </div>
+);
 
   return (
     <div>
