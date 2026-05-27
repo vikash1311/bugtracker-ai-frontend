@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiAlertCircle, FiMail, FiLock, FiEye, FiEyeOff } from 'react-icons/fi';
-import axiosInstance from '../api/axiosInstance';
+import axiosInstance, { wakeBackend } from '../api/axiosInstance';
 import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
@@ -39,6 +39,11 @@ const Login = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+  // Wake backend as soon as user lands on login page
+    wakeBackend();
+  }, []);
 
   return (
     <div style={{
@@ -257,12 +262,51 @@ const Login = () => {
             </motion.button>
           </form>
 
-          <p style={{
-            textAlign: 'center', marginTop: 24,
-            color: '#475569', fontSize: 13,
-          }}>
-            Contact your administrator for access
-          </p>
+{/* Demo Credentials */}
+<div style={{
+  marginTop: 24,
+  padding: '16px',
+  backgroundColor: 'rgba(59,130,246,0.08)',
+  border: '1px solid rgba(59,130,246,0.2)',
+  borderRadius: 12,
+}}>
+  <p style={{
+    color: '#60a5fa', fontSize: 12, fontWeight: 700,
+    marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1,
+  }}>
+    🎯 Demo Credentials
+  </p>
+  {[
+    { role: 'Super Admin', email: 'superadmin2@bugtracker.com', pass: 'Admin@123' },
+    { role: 'Developer', email: 'dev@bugtracker.com', pass: 'Dev@123' },
+    { role: 'Tester', email: 'tester@bugtracker.com', pass: 'Test@123' },
+  ].map(({ role, email, pass }) => (
+    <div
+      key={role}
+      onClick={() => setForm({ email, password: pass })}
+      style={{
+        display: 'flex', justifyContent: 'space-between',
+        alignItems: 'center', padding: '8px 10px',
+        marginBottom: 6, borderRadius: 8, cursor: 'pointer',
+        backgroundColor: 'rgba(255,255,255,0.04)',
+        border: '1px solid rgba(255,255,255,0.06)',
+        transition: 'background 0.2s',
+      }}
+      onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(59,130,246,0.15)'}
+      onMouseLeave={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.04)'}
+    >
+      <span style={{ color: '#94a3b8', fontSize: 12, fontWeight: 600 }}>
+        {role}
+      </span>
+      <span style={{ color: '#60a5fa', fontSize: 11, fontFamily: 'monospace' }}>
+        {email}
+      </span>
+    </div>
+  ))}
+  <p style={{ color: '#475569', fontSize: 11, marginTop: 8, textAlign: 'center' }}>
+    Click any role to auto-fill credentials
+  </p>
+</div>
         </motion.div>
       </div>
     </div>

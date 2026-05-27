@@ -1,11 +1,22 @@
 import axios from 'axios';
 
+const BASE_URL = 'https://bugtracker-ai.onrender.com/api';
+
+// Wake the backend silently before any login attempt
+export const wakeBackend = async () => {
+  try {
+    await axios.get(`${BASE_URL}/auth/login`, { timeout: 30000 });
+  } catch {
+    // 405 Method Not Allowed = server is awake, ignore
+  }
+};
+
 const axiosInstance = axios.create({
-  baseURL: 'https://bugtracker-ai.onrender.com/api',
+  baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 60000, // 60 seconds for cold start
+  timeout: 60000,
 });
 
 axiosInstance.interceptors.request.use(
