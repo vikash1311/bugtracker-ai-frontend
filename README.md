@@ -142,8 +142,8 @@ App runs at `http://localhost:5173`
 ## 🔗 Related
 
 - 🔧 **Backend Repo:** [bugtracker-ai-backend](https://github.com/vikash1311/bugtracker-ai)
-- 🌐 **Live App:** [your-live-url.com](https://bugtrackerai.netlify.app/)
-- 👤 **Portfolio:** [yourportfolio.com](https://vikash-gautam.netlify.app)
+- 🌐 **Live App:** [bugtrackerai.netlify.app](https://bugtrackerai.netlify.app/)
+- 👤 **Portfolio:** [vikash-gautam.netlify.app](https://vikash-gautam.netlify.app)
 
 ---
 
