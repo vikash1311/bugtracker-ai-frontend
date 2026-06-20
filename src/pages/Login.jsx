@@ -27,7 +27,7 @@ const Login = () => {
       const res = await axiosInstance.post('/auth/login', form);
       clearTimeout(wakeTimer);
       login(res.data.data);
-      navigate('/');
+      navigate('/dashboard');
     } catch (err) {
       clearTimeout(wakeTimer);
       if (err.code === 'ECONNABORTED' || !err.response) {

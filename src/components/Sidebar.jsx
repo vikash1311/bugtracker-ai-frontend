@@ -1,27 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { getTheme } from '../utils/theme';
+import LogoMark from '../assets/brand/logo-mark.svg';
 import {
   FiZap, FiHome, FiFolder, FiUsers,
   FiLogOut, FiChevronLeft, FiChevronRight,
-  FiSun, FiMoon
+  FiSun, FiMoon, FiX
 } from 'react-icons/fi';
 
-const Sidebar = () => {
-  const [collapsed, setCollapsed] = useState(false);
+const MOBILE_BREAKPOINT = 768;
+
+// Tracks whether viewport is at/under the mobile breakpoint, via matchMedia.
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== 'undefined' &&
+      window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`).matches
+  );
+
+  useEffect(() => {
+    const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
+    const handler = (e) => setIsMobile(e.matches);
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
+  }, []);
+
+  return isMobile;
+};
+
+const Sidebar = ({ mobileOpen, onMobileClose, collapsed, onToggleCollapsed }) => {
   const { user, logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const t = getTheme(isDark);
   const navigate = useNavigate();
   const location = useLocation();
+  const isMobile = useIsMobile();
 
   const handleLogout = () => { logout(); navigate('/login'); };
 
   const navItems = [
-    { icon: FiHome, label: 'Dashboard', path: '/' },
+    { icon: FiHome, label: 'Dashboard', path: '/dashboard' },
     { icon: FiFolder, label: 'Projects', path: '/projects' },
     { icon: FiZap, label: 'Report Bug', path: '/bugs/create',
       roles: ['TESTER', 'ADMIN'] },
@@ -31,45 +51,92 @@ const Sidebar = () => {
     !item.roles || item.roles.includes(user?.role)
   );
 
+  const handleNavigate = (path) => {
+    navigate(path);
+    if (isMobile) onMobileClose?.();
+  };
+
+  // On mobile the rail is never icon-collapsed — it's either fully
+  // hidden off-screen or fully open as an overlay.
+  const collapsedForLayout = isMobile ? false : collapsed;
+  const width = isMobile ? 260 : (collapsed ? 72 : 240);
+
   return (
-    <motion.div
-      animate={{ width: collapsed ? 72 : 240 }}
-      transition={{ duration: 0.3, ease: 'easeInOut' }}
-      style={{
-        height: '100vh', position: 'fixed', left: 0, top: 0,
-        backgroundColor: t.sidebar, display: 'flex',
-        flexDirection: 'column', zIndex: 100, overflow: 'hidden',
-        boxShadow: '4px 0 24px rgba(0,0,0,0.15)',
-      }}>
+    <>
+      {/* Backdrop — only rendered on mobile while the sidebar is open */}
+      <AnimatePresence>
+        {isMobile && mobileOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onMobileClose}
+            style={{
+              position: 'fixed', inset: 0,
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              zIndex: 90,
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      <motion.div
+        animate={{
+          width,
+          x: isMobile ? (mobileOpen ? 0 : -width) : 0,
+        }}
+        transition={{ duration: 0.3, ease: 'easeInOut' }}
+        style={{
+          height: '100vh', position: 'fixed', left: 0, top: 0,
+          backgroundColor: t.sidebar, display: 'flex',
+          flexDirection: 'column', zIndex: 100, overflow: 'hidden',
+          boxShadow: '4px 0 24px rgba(0,0,0,0.15)',
+        }}>
 
       {/* Logo */}
       <div style={{
         padding: '20px 16px', display: 'flex',
-        alignItems: 'center', gap: '12px',
+        alignItems: 'center', justifyContent: 'space-between',
+        gap: '12px',
         borderBottom: '1px solid rgba(255,255,255,0.1)',
       }}>
-        <div style={{
-          width: 36, height: 36, borderRadius: '10px',
-          background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
-          display: 'flex', alignItems: 'center',
-          justifyContent: 'center', flexShrink: 0,
-        }}>
-          <FiZap color="#fff" size={18} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <img
+            src={LogoMark}
+            alt="BugTracker AI"
+            style={{
+              width: 36, height: 36, borderRadius: '10px',
+              flexShrink: 0, display: 'block',
+            }}
+          />
+          <AnimatePresence>
+            {!collapsedForLayout && (
+              <motion.span
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                style={{
+                  color: '#fff', fontWeight: 700,
+                  fontSize: 16, whiteSpace: 'nowrap',
+                }}>
+                BugTracker AI
+              </motion.span>
+            )}
+          </AnimatePresence>
         </div>
-        <AnimatePresence>
-          {!collapsed && (
-            <motion.span
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              style={{
-                color: '#fff', fontWeight: 700,
-                fontSize: 16, whiteSpace: 'nowrap',
-              }}>
-              BugTracker AI
-            </motion.span>
-          )}
-        </AnimatePresence>
+        {isMobile && (
+          <motion.div
+            whileTap={{ scale: 0.9 }}
+            onClick={onMobileClose}
+            style={{
+              width: 32, height: 32, borderRadius: 8,
+              display: 'flex', alignItems: 'center',
+              justifyContent: 'center', cursor: 'pointer',
+              backgroundColor: 'rgba(255,255,255,0.05)', flexShrink: 0,
+            }}>
+            <FiX size={18} color="#94a3b8" />
+          </motion.div>
+        )}
       </div>
 
       {/* Nav Items */}
@@ -81,7 +148,7 @@ const Sidebar = () => {
               key={path}
               whileHover={{ x: 4 }}
               whileTap={{ scale: 0.97 }}
-              onClick={() => navigate(path)}
+              onClick={() => handleNavigate(path)}
               style={{
                 display: 'flex', alignItems: 'center',
                 gap: 12, padding: '11px 12px',
@@ -98,7 +165,7 @@ const Sidebar = () => {
                 style={{ flexShrink: 0 }}
               />
               <AnimatePresence>
-                {!collapsed && (
+                {!collapsedForLayout && (
                   <motion.span
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -124,7 +191,7 @@ const Sidebar = () => {
       }}>
         {/* User Info */}
         <AnimatePresence>
-          {!collapsed && (
+          {!collapsedForLayout && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -163,7 +230,7 @@ const Sidebar = () => {
             ? <FiSun size={20} color="#f59e0b" />
             : <FiMoon size={20} color="#94a3b8" />}
           <AnimatePresence>
-            {!collapsed && (
+            {!collapsedForLayout && (
               <motion.span
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -185,7 +252,7 @@ const Sidebar = () => {
           }}>
           <FiLogOut size={20} color="#ef4444" />
           <AnimatePresence>
-            {!collapsed && (
+            {!collapsedForLayout && (
               <motion.span
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -196,22 +263,25 @@ const Sidebar = () => {
           </AnimatePresence>
         </motion.div>
 
-        {/* Collapse Toggle */}
-        <motion.div
-          whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-          onClick={() => setCollapsed(!collapsed)}
-          style={{
-            display: 'flex', alignItems: 'center',
-            justifyContent: 'center', padding: '8px',
-            borderRadius: 10, cursor: 'pointer',
-            backgroundColor: 'rgba(255,255,255,0.05)',
-          }}>
-          {collapsed
-            ? <FiChevronRight size={18} color="#94a3b8" />
-            : <FiChevronLeft size={18} color="#94a3b8" />}
-        </motion.div>
+        {/* Collapse Toggle — desktop rail only, not meaningful on mobile overlay */}
+        {!isMobile && (
+          <motion.div
+            whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+            onClick={onToggleCollapsed}
+            style={{
+              display: 'flex', alignItems: 'center',
+              justifyContent: 'center', padding: '8px',
+              borderRadius: 10, cursor: 'pointer',
+              backgroundColor: 'rgba(255,255,255,0.05)',
+            }}>
+            {collapsed
+              ? <FiChevronRight size={18} color="#94a3b8" />
+              : <FiChevronLeft size={18} color="#94a3b8" />}
+          </motion.div>
+        )}
       </div>
     </motion.div>
+    </>
   );
 };
 

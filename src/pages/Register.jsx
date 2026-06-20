@@ -19,7 +19,7 @@ const Register = () => {
     try {
       const res = await axiosInstance.post('/auth/register', form);
       login(res.data.data);
-      navigate('/');
+      navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed');
     } finally {

@@ -11,3 +11,13 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Landing page responsiveness — inline styles can't do media queries */
+@media (max-width: 860px) {
+  .landing-hero-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .landing-nav-links {
+    display: none !important;
+  }
+}
