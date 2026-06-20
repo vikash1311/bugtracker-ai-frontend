@@ -116,8 +116,9 @@ const Sidebar = ({ mobileOpen, onMobileClose, collapsed, onToggleCollapsed }) =>
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -10 }}
                 style={{
-                  color: '#fff', fontWeight: 700,
+                  color: '#F5F6F7', fontWeight: 700,
                   fontSize: 16, whiteSpace: 'nowrap',
+                  fontFamily: t.fontDisplay, letterSpacing: '-0.3px',
                 }}>
                 BugTracker AI
               </motion.span>
@@ -132,9 +133,9 @@ const Sidebar = ({ mobileOpen, onMobileClose, collapsed, onToggleCollapsed }) =>
               width: 32, height: 32, borderRadius: 8,
               display: 'flex', alignItems: 'center',
               justifyContent: 'center', cursor: 'pointer',
-              backgroundColor: 'rgba(255,255,255,0.05)', flexShrink: 0,
+              backgroundColor: 'rgba(255,255,255,0.06)', flexShrink: 0,
             }}>
-            <FiX size={18} color="#94a3b8" />
+            <FiX size={18} color="#8B93A1" />
           </motion.div>
         )}
       </div>
@@ -155,13 +156,13 @@ const Sidebar = ({ mobileOpen, onMobileClose, collapsed, onToggleCollapsed }) =>
                 borderRadius: 10, cursor: 'pointer',
                 marginBottom: 4,
                 backgroundColor: active
-                  ? 'rgba(59,130,246,0.2)' : 'transparent',
+                  ? 'rgba(233,79,55,0.14)' : 'transparent',
                 borderLeft: active
-                  ? '3px solid #3b82f6' : '3px solid transparent',
+                  ? `3px solid ${t.accent}` : '3px solid transparent',
               }}>
               <Icon
                 size={20}
-                color={active ? '#3b82f6' : '#94a3b8'}
+                color={active ? t.accent : '#8B93A1'}
                 style={{ flexShrink: 0 }}
               />
               <AnimatePresence>
@@ -171,7 +172,7 @@ const Sidebar = ({ mobileOpen, onMobileClose, collapsed, onToggleCollapsed }) =>
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     style={{
-                      color: active ? '#fff' : '#94a3b8',
+                      color: active ? '#F5F6F7' : '#8B93A1',
                       fontSize: 14, fontWeight: active ? 600 : 400,
                       whiteSpace: 'nowrap',
                     }}>
@@ -202,13 +203,14 @@ const Sidebar = ({ mobileOpen, onMobileClose, collapsed, onToggleCollapsed }) =>
                 borderRadius: 10,
               }}>
               <div style={{
-                color: '#fff', fontSize: 13,
+                color: '#F5F6F7', fontSize: 13,
                 fontWeight: 600, marginBottom: 2,
               }}>
                 {user?.name}
               </div>
               <div style={{
-                color: '#64748b', fontSize: 11,
+                color: '#5A6372', fontSize: 11,
+                fontFamily: t.fontMono,
                 textTransform: 'uppercase', letterSpacing: 1,
               }}>
                 {user?.role}
@@ -227,14 +229,14 @@ const Sidebar = ({ mobileOpen, onMobileClose, collapsed, onToggleCollapsed }) =>
             cursor: 'pointer', marginBottom: 4,
           }}>
           {isDark
-            ? <FiSun size={20} color="#f59e0b" />
-            : <FiMoon size={20} color="#94a3b8" />}
+            ? <FiSun size={20} color="#E0A22D" />
+            : <FiMoon size={20} color="#8B93A1" />}
           <AnimatePresence>
             {!collapsedForLayout && (
               <motion.span
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                style={{ color: '#94a3b8', fontSize: 14 }}>
+                style={{ color: '#8B93A1', fontSize: 14 }}>
                 {isDark ? 'Light Mode' : 'Dark Mode'}
               </motion.span>
             )}
@@ -250,13 +252,13 @@ const Sidebar = ({ mobileOpen, onMobileClose, collapsed, onToggleCollapsed }) =>
             padding: '10px 12px', borderRadius: 10,
             cursor: 'pointer', marginBottom: 8,
           }}>
-          <FiLogOut size={20} color="#ef4444" />
+          <FiLogOut size={20} color={t.accent} />
           <AnimatePresence>
             {!collapsedForLayout && (
               <motion.span
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                style={{ color: '#ef4444', fontSize: 14 }}>
+                style={{ color: t.accent, fontSize: 14 }}>
                 Logout
               </motion.span>
             )}
@@ -275,8 +277,8 @@ const Sidebar = ({ mobileOpen, onMobileClose, collapsed, onToggleCollapsed }) =>
               backgroundColor: 'rgba(255,255,255,0.05)',
             }}>
             {collapsed
-              ? <FiChevronRight size={18} color="#94a3b8" />
-              : <FiChevronLeft size={18} color="#94a3b8" />}
+              ? <FiChevronRight size={18} color="#8B93A1" />
+              : <FiChevronLeft size={18} color="#8B93A1" />}
           </motion.div>
         )}
       </div>

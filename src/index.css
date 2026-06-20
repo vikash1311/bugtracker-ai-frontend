@@ -16,8 +16,25 @@ code {
 @media (max-width: 860px) {
   .landing-hero-grid {
     grid-template-columns: 1fr !important;
+    padding-top: 32px !important;
+    padding-bottom: 40px !important;
   }
   .landing-nav-links {
     display: none !important;
+  }
+  .landing-nav-mobile-row {
+    display: flex !important;
+  }
+  .landing-hero-headline {
+    max-width: 100% !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .landing-github-label {
+    display: none;
+  }
+  .landing-github-link {
+    padding: 8px 10px !important;
   }
 }

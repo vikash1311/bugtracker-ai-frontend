@@ -144,12 +144,13 @@ const Landing = () => {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <a href="https://github.com/vikash1311/bugtracker-ai" target="_blank" rel="noreferrer"
+              className="landing-github-link"
               style={{
                 display: 'flex', alignItems: 'center', gap: 6,
                 color: b.textSecondary, textDecoration: 'none', fontSize: 13.5,
                 padding: '8px 14px', borderRadius: 7, border: `1px solid ${b.borderStrong}`,
               }}>
-              <FiGithub size={15} /> GitHub
+              <FiGithub size={15} /> <span className="landing-github-label">GitHub</span>
             </a>
             <motion.button
               whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
@@ -162,6 +163,20 @@ const Landing = () => {
               Sign in
             </motion.button>
           </div>
+        </div>
+
+        {/* Compact secondary nav row — mobile only, keeps section links reachable
+            without crowding the main header bar */}
+        <div className="landing-nav-mobile-row" style={{
+          display: 'none', gap: 20, padding: '0 24px 12px',
+          borderTop: `1px solid ${b.border}`, marginTop: 4, paddingTop: 12,
+        }}>
+          {NAV_LINKS.map(l => (
+            <a key={l.href} href={l.href} style={{
+              color: b.textMuted, textDecoration: 'none', fontSize: 12.5,
+              fontFamily: b.fontMono,
+            }}>{l.label}</a>
+          ))}
         </div>
       </header>
 
@@ -192,12 +207,13 @@ const Landing = () => {
           <motion.h1
             initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
+            className="landing-hero-headline"
             style={{
               fontFamily: b.fontDisplay, fontWeight: 800,
-              fontSize: 'clamp(36px, 5vw, 58px)', lineHeight: 1.08,
-              letterSpacing: '-1.5px', margin: '0 0 24px',
+              fontSize: 'clamp(32px, 6vw, 58px)', lineHeight: 1.1,
+              letterSpacing: '-1.5px', margin: '0 0 24px', maxWidth: 620,
             }}>
-            Every bug, found<br />before it finds <span style={{ color: b.signal }}>you.</span>
+            Every bug, found before it finds <span style={{ color: b.signal }}>you.</span>
           </motion.h1>
 
           <motion.p
