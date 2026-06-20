@@ -38,3 +38,40 @@ code {
     padding: 8px 10px !important;
   }
 }
+
+/* Dashboard responsiveness */
+@media (max-width: 860px) {
+  .dashboard-hero-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .dashboard-bottom-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .dashboard-mini-stats {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .user-table-header {
+    display: none !important;
+  }
+  .user-row {
+    grid-template-columns: 1fr auto !important;
+    grid-template-areas: "name role" "email status" !important;
+    row-gap: 8px !important;
+  }
+  .user-row > div:first-child {
+    grid-area: name;
+  }
+  .user-row-email {
+    grid-area: email;
+    font-size: 12px !important;
+  }
+  .user-row-role {
+    grid-area: role;
+    justify-self: end !important;
+  }
+  .user-row-status {
+    grid-area: status;
+    justify-self: start !important;
+  }
+}

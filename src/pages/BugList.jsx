@@ -1,16 +1,19 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { FiPlus, FiChevronLeft, FiChevronRight, FiInbox } from 'react-icons/fi';
 import axiosInstance from '../api/axiosInstance';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+import { getTheme, priorityConfig, statusConfig } from '../utils/theme';
 
-const statusColors = {
-  OPEN: '#fef3c7', IN_PROGRESS: '#dbeafe',
-  RESOLVED: '#d1fae5', CLOSED: '#f1f5f9',
-};
-const priorityColors = {
-  LOW: '#d1fae5', MEDIUM: '#fef3c7',
-  HIGH: '#fee2e2', CRITICAL: '#fce7f3',
-};
+const STATUS_FILTERS = [
+  { value: '', label: 'All' },
+  { value: 'OPEN', label: 'Open' },
+  { value: 'IN_PROGRESS', label: 'In Progress' },
+  { value: 'RESOLVED', label: 'Resolved' },
+  { value: 'CLOSED', label: 'Closed' },
+];
 
 const BugList = () => {
   const { projectId } = useParams();
@@ -20,9 +23,12 @@ const BugList = () => {
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const { user } = useAuth();
+  const { isDark } = useTheme();
+  const t = getTheme(isDark);
   const navigate = useNavigate();
 
   const fetchBugs = useCallback(() => {
+    setLoading(true);
     let url = `/bugs/project/${projectId}?page=${page}&size=10`;
     if (statusFilter) url += `&status=${statusFilter}`;
     axiosInstance.get(url)
@@ -34,116 +40,193 @@ const BugList = () => {
       .finally(() => setLoading(false));
   }, [projectId, page, statusFilter]);
 
-  useEffect(() => {
-    fetchBugs();
-  }, [fetchBugs]);
-
-  if (loading) return <div style={styles.loading}>Loading...</div>;
+  useEffect(() => { fetchBugs(); }, [fetchBugs]);
 
   return (
-    <div style={styles.container}>
-      <div style={styles.header}>
-        <h1 style={styles.title}>Bugs</h1>
-        <div style={styles.actions}>
-          <select style={styles.select} value={statusFilter}
-            onChange={e => { setStatusFilter(e.target.value); setPage(0); }}>
-            <option value="">All Status</option>
-            <option value="OPEN">Open</option>
-            <option value="IN_PROGRESS">In Progress</option>
-            <option value="RESOLVED">Resolved</option>
-            <option value="CLOSED">Closed</option>
-          </select>
-          {(user?.role === 'TESTER' || user?.role === 'ADMIN') && (
-            <button style={styles.btn}
-              onClick={() => navigate('/bugs/create')}>
-              + Report Bug
+    <div>
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        style={{
+          display: 'flex', justifyContent: 'space-between',
+          alignItems: 'center', marginBottom: 20, gap: 16, flexWrap: 'wrap',
+        }}>
+        <h1 style={{ fontSize: 26, fontWeight: 800,
+          fontFamily: t.fontDisplay, letterSpacing: '-0.5px',
+          color: t.text, margin: 0 }}>
+          Bugs
+        </h1>
+        {(user?.role === 'TESTER' || user?.role === 'ADMIN') && (
+          <motion.button
+            whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+            onClick={() => navigate('/bugs/create')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '11px 18px', background: t.accent,
+              color: '#0A0E14', border: 'none', borderRadius: 10,
+              cursor: 'pointer', fontSize: 13.5, fontWeight: 700,
+              boxShadow: `0 4px 16px ${t.accent}4D`,
+            }}>
+            <FiPlus size={16} /> Report Bug
+          </motion.button>
+        )}
+      </motion.div>
+
+      {/* Status filter pills */}
+      <div style={{
+        display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap',
+        overflowX: 'auto', paddingBottom: 2,
+      }}>
+        {STATUS_FILTERS.map(f => {
+          const active = statusFilter === f.value;
+          return (
+            <button
+              key={f.value}
+              onClick={() => { setStatusFilter(f.value); setPage(0); }}
+              style={{
+                padding: '7px 14px', borderRadius: 20, fontSize: 12.5,
+                fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
+                border: `1px solid ${active ? t.accent : t.border}`,
+                backgroundColor: active ? `${t.accent}1A` : 'transparent',
+                color: active ? t.accent : t.textSecondary,
+              }}>
+              {f.label}
             </button>
-          )}
-        </div>
+          );
+        })}
       </div>
 
-      {bugs.length === 0 ? (
-        <div style={styles.empty}>No bugs found.</div>
-      ) : (
-        <div style={styles.list}>
-          {bugs.map(bug => (
-            <div key={bug.id} style={styles.card}
-              onClick={() => navigate(`/bugs/${bug.id}`)}>
-              <div style={styles.cardTop}>
-                <span style={styles.bugTitle}>{bug.title}</span>
-                <div style={styles.badges}>
-                  <span style={{
-                    ...styles.badge,
-                    backgroundColor: priorityColors[bug.priority]
-                  }}>
-                    {bug.priority}
-                  </span>
-                  <span style={{
-                    ...styles.badge,
-                    backgroundColor: statusColors[bug.status]
-                  }}>
-                    {bug.status}
-                  </span>
-                </div>
-              </div>
-              <p style={styles.desc}>{bug.description}</p>
-              <div style={styles.cardBottom}>
-                <span style={styles.meta}>
-                  Project: {bug.projectName}
-                </span>
-                <span style={styles.meta}>
-                  Reporter: {bug.reportedByName}
-                </span>
-                <span style={styles.meta}>
-                  Assigned: {bug.assignedToName}
-                </span>
-              </div>
-            </div>
+      {/* Bug cards */}
+      {loading ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {[1, 2, 3].map(i => (
+            <motion.div key={i}
+              animate={{ opacity: [0.5, 1, 0.5] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+              style={{ height: 92, backgroundColor: t.bgTertiary, borderRadius: 14 }} />
           ))}
+        </div>
+      ) : bugs.length === 0 ? (
+        <div style={{
+          backgroundColor: t.bgSecondary, borderRadius: 16, padding: 48,
+          border: `1px solid ${t.border}`, textAlign: 'center',
+        }}>
+          <FiInbox size={32} color={t.textMuted} style={{ marginBottom: 12 }} />
+          <p style={{ color: t.textSecondary, fontSize: 14.5, margin: 0 }}>
+            No bugs found{statusFilter ? ' for this filter.' : '.'}
+          </p>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {bugs.map((bug, i) => {
+            const statusInfo = statusConfig[bug.status] || statusConfig.OPEN;
+            const priorityInfo = priorityConfig[bug.priority] || priorityConfig.LOW;
+            return (
+              <motion.div
+                key={bug.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.04 }}
+                whileHover={{ x: 3 }}
+                onClick={() => navigate(`/bugs/${bug.id}`)}
+                style={{
+                  backgroundColor: t.bgSecondary, borderRadius: 14,
+                  padding: '16px 20px', border: `1px solid ${t.border}`,
+                  boxShadow: t.cardShadow, cursor: 'pointer',
+                }}>
+                <div style={{
+                  display: 'flex', justifyContent: 'space-between',
+                  alignItems: 'flex-start', gap: 12, marginBottom: 8,
+                }}>
+                  <span style={{
+                    color: t.text, fontSize: 15, fontWeight: 700,
+                    fontFamily: t.fontDisplay, lineHeight: 1.3,
+                  }}>
+                    {bug.title}
+                  </span>
+                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                    <span style={{
+                      padding: '3px 10px', borderRadius: 20, fontSize: 10.5,
+                      fontWeight: 700, letterSpacing: '0.3px',
+                      color: priorityInfo.color, backgroundColor: priorityInfo.bg,
+                    }}>
+                      {priorityInfo.label.toUpperCase()}
+                    </span>
+                    <span style={{
+                      padding: '3px 10px', borderRadius: 20, fontSize: 10.5,
+                      fontWeight: 700, letterSpacing: '0.3px',
+                      color: statusInfo.color, backgroundColor: statusInfo.bg,
+                    }}>
+                      {statusInfo.label.toUpperCase()}
+                    </span>
+                  </div>
+                </div>
+                {bug.description && (
+                  <p style={{
+                    color: t.textSecondary, fontSize: 13, lineHeight: 1.5,
+                    margin: '0 0 12px',
+                    overflow: 'hidden', textOverflow: 'ellipsis',
+                    display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+                  }}>
+                    {bug.description}
+                  </p>
+                )}
+                <div style={{
+                  display: 'flex', gap: 16, flexWrap: 'wrap',
+                  color: t.textMuted, fontSize: 11.5,
+                }}>
+                  <span>Project: {bug.projectName}</span>
+                  <span>Reporter: {bug.reportedByName}</span>
+                  {bug.assignedToName && <span>Assigned: {bug.assignedToName}</span>}
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
       )}
 
+      {/* Pagination */}
       {totalPages > 1 && (
-        <div style={styles.pagination}>
-          <button style={styles.pageBtn} disabled={page === 0}
-            onClick={() => setPage(p => p - 1)}>
-            Previous
-          </button>
-          <span style={styles.pageInfo}>
-            Page {page + 1} of {totalPages}
+        <div style={{
+          display: 'flex', justifyContent: 'center', alignItems: 'center',
+          gap: 14, marginTop: 28,
+        }}>
+          <motion.button
+            whileHover={{ scale: page === 0 ? 1 : 1.05 }}
+            disabled={page === 0}
+            onClick={() => setPage(p => p - 1)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '9px 16px', borderRadius: 10,
+              border: `1px solid ${t.border}`,
+              backgroundColor: t.bgSecondary,
+              color: page === 0 ? t.textMuted : t.textSecondary,
+              cursor: page === 0 ? 'default' : 'pointer', fontSize: 13,
+            }}>
+            <FiChevronLeft size={14} /> Previous
+          </motion.button>
+          <span style={{ color: t.textMuted, fontSize: 13, fontFamily: t.fontMono }}>
+            {page + 1} / {totalPages}
           </span>
-          <button style={styles.pageBtn}
+          <motion.button
+            whileHover={{ scale: page >= totalPages - 1 ? 1 : 1.05 }}
             disabled={page >= totalPages - 1}
-            onClick={() => setPage(p => p + 1)}>
-            Next
-          </button>
+            onClick={() => setPage(p => p + 1)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '9px 16px', borderRadius: 10,
+              border: `1px solid ${t.border}`,
+              backgroundColor: t.bgSecondary,
+              color: page >= totalPages - 1 ? t.textMuted : t.textSecondary,
+              cursor: page >= totalPages - 1 ? 'default' : 'pointer', fontSize: 13,
+            }}>
+            Next <FiChevronRight size={14} />
+          </motion.button>
         </div>
       )}
     </div>
   );
-};
-
-const styles = {
-  container: { padding: '24px', maxWidth: '1200px', margin: '0 auto' },
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' },
-  title: { fontSize: '24px', color: '#1e293b' },
-  actions: { display: 'flex', gap: '12px', alignItems: 'center' },
-  select: { padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' },
-  btn: { padding: '10px 20px', backgroundColor: '#3b82f6', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' },
-  list: { display: 'flex', flexDirection: 'column', gap: '12px' },
-  card: { backgroundColor: '#fff', padding: '16px 20px', borderRadius: '10px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', cursor: 'pointer', border: '1px solid #e2e8f0' },
-  cardTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' },
-  bugTitle: { fontWeight: '600', color: '#1e293b', fontSize: '15px' },
-  badges: { display: 'flex', gap: '8px' },
-  badge: { padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600' },
-  desc: { color: '#64748b', fontSize: '13px', marginBottom: '12px' },
-  cardBottom: { display: 'flex', gap: '20px' },
-  meta: { fontSize: '12px', color: '#94a3b8' },
-  pagination: { display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px', marginTop: '24px' },
-  pageBtn: { padding: '8px 16px', border: '1px solid #d1d5db', borderRadius: '8px', cursor: 'pointer', backgroundColor: '#fff' },
-  pageInfo: { color: '#64748b', fontSize: '14px' },
-  loading: { textAlign: 'center', padding: '60px', color: '#64748b' },
-  empty: { textAlign: 'center', padding: '40px', color: '#94a3b8' },
 };
 
 export default BugList;

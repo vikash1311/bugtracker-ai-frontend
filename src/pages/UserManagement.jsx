@@ -16,9 +16,9 @@ const UserManagement = () => {
   const t = getTheme(isDark);
 
   const roleColors = {
-    ADMIN: { bg: '#ede9fe', color: '#7c3aed' },
-    DEVELOPER: { bg: '#dbeafe', color: '#1d4ed8' },
-    TESTER: { bg: '#d1fae5', color: '#065f46' },
+    ADMIN: { bg: `${t.accent}1F`, color: t.accent },
+    DEVELOPER: { bg: '#E0A22D1F', color: '#E0A22D' },
+    TESTER: { bg: `${t.success}1F`, color: t.success },
   };
 
   const fetchUsers = () => {
@@ -51,7 +51,8 @@ const UserManagement = () => {
         style={{ display: 'flex', justifyContent: 'space-between',
           alignItems: 'center', marginBottom: 32 }}>
         <div>
-          <h1 style={{ fontSize: 28, fontWeight: 800,
+          <h1 style={{ fontSize: 26, fontWeight: 800,
+            fontFamily: t.fontDisplay, letterSpacing: '-0.5px',
             color: t.text, marginBottom: 4 }}>
             User Management
           </h1>
@@ -66,10 +67,10 @@ const UserManagement = () => {
           style={{
             display: 'flex', alignItems: 'center', gap: 8,
             padding: '12px 20px',
-            background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
-            color: '#fff', border: 'none', borderRadius: 12,
-            cursor: 'pointer', fontSize: 14, fontWeight: 600,
-            boxShadow: '0 4px 20px rgba(59,130,246,0.3)',
+            background: t.accent,
+            color: '#0A0E14', border: 'none', borderRadius: 12,
+            cursor: 'pointer', fontSize: 14, fontWeight: 700,
+            boxShadow: `0 4px 20px ${t.accent}4D`,
           }}>
           <FiPlus size={18} /> Add User
         </motion.button>
@@ -184,10 +185,10 @@ const UserManagement = () => {
                     type="submit"
                     style={{
                       flex: 1, padding: '12px',
-                      background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+                      background: t.accent,
                       border: 'none', borderRadius: 10,
-                      color: '#fff', cursor: 'pointer',
-                      fontSize: 14, fontWeight: 600,
+                      color: '#0A0E14', cursor: 'pointer',
+                      fontSize: 14, fontWeight: 700,
                     }}>
                     Create User
                   </motion.button>
@@ -198,22 +199,16 @@ const UserManagement = () => {
         )}
       </AnimatePresence>
 
-      {/* Users Table */}
+      {/* Users list */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        style={{
-          backgroundColor: t.bgSecondary, borderRadius: 16,
-          border: `1px solid ${t.border}`,
-          boxShadow: t.cardShadow, overflow: 'hidden',
-        }}>
-        <div style={{
-          padding: '16px 24px',
-          borderBottom: `1px solid ${t.border}`,
+        transition={{ delay: 0.2 }}>
+        <div className="user-table-header" style={{
+          padding: '0 20px 10px',
           display: 'grid',
           gridTemplateColumns: '2fr 2fr 1fr 1fr',
-          color: t.textSecondary, fontSize: 12,
+          color: t.textMuted, fontSize: 11,
           fontWeight: 600, textTransform: 'uppercase',
           letterSpacing: 1,
         }}>
@@ -224,64 +219,79 @@ const UserManagement = () => {
         </div>
 
         {loading ? (
-          [1,2,3].map(i => (
-            <motion.div key={i}
-              animate={{ opacity: [0.5, 1, 0.5] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-              style={{ height: 64, margin: '8px 24px',
-                backgroundColor: t.bgTertiary, borderRadius: 8 }} />
-          ))
-        ) : users.map((user, i) => (
-          <motion.div
-            key={user.id}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.05 }}
-            style={{
-              padding: '16px 24px',
-              borderBottom: `1px solid ${t.border}`,
-              display: 'grid',
-              gridTemplateColumns: '2fr 2fr 1fr 1fr',
-              alignItems: 'center',
-            }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{
-                width: 36, height: 36, borderRadius: '50%',
-                background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
-                display: 'flex', alignItems: 'center',
-                justifyContent: 'center', color: '#fff',
-                fontSize: 14, fontWeight: 700, flexShrink: 0,
-              }}>
-                {user.name?.charAt(0).toUpperCase()}
-              </div>
-              <span style={{ color: t.text, fontSize: 14,
-                fontWeight: 500 }}>
-                {user.name}
-              </span>
-            </div>
-            <span style={{ color: t.textSecondary, fontSize: 14 }}>
-              {user.email}
-            </span>
-            <span style={{
-              display: 'inline-block', padding: '4px 10px',
-              borderRadius: 20, fontSize: 11, fontWeight: 600,
-              backgroundColor: roleColors[user.role]?.bg,
-              color: roleColors[user.role]?.color,
-            }}>
-              {user.role}
-            </span>
-            <span style={{
-              display: 'inline-block', padding: '4px 10px',
-              borderRadius: 20, fontSize: 11, fontWeight: 600,
-              backgroundColor: '#d1fae5', color: '#065f46',
-            }}>
-              Active
-            </span>
-          </motion.div>
-        ))}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {[1, 2, 3].map(i => (
+              <motion.div key={i}
+                animate={{ opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+                style={{ height: 64, backgroundColor: t.bgTertiary, borderRadius: 14 }} />
+            ))}
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {users.map((user, i) => (
+              <motion.div
+                key={user.id}
+                initial={{ opacity: 0, x: -12 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.05 }}
+                className="user-row"
+                style={{
+                  backgroundColor: t.bgSecondary, borderRadius: 14,
+                  border: `1px solid ${t.border}`, boxShadow: t.cardShadow,
+                  padding: '14px 20px',
+                  display: 'grid',
+                  gridTemplateColumns: '2fr 2fr 1fr 1fr',
+                  alignItems: 'center', gap: 8,
+                }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                  <div style={{
+                    width: 34, height: 34, borderRadius: '50%',
+                    backgroundColor: t.accent,
+                    display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', color: '#0A0E14',
+                    fontSize: 13, fontWeight: 700, flexShrink: 0,
+                  }}>
+                    {user.name?.charAt(0).toUpperCase()}
+                  </div>
+                  <span style={{
+                    color: t.text, fontSize: 13.5, fontWeight: 600,
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>
+                    {user.name}
+                  </span>
+                </div>
+                <span className="user-row-email" style={{
+                  color: t.textSecondary, fontSize: 13,
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>
+                  {user.email}
+                </span>
+                <span className="user-row-role" style={{
+                  display: 'inline-block', padding: '4px 10px',
+                  borderRadius: 20, fontSize: 10.5, fontWeight: 700,
+                  backgroundColor: roleColors[user.role]?.bg,
+                  color: roleColors[user.role]?.color,
+                  width: 'fit-content',
+                }}>
+                  {user.role}
+                </span>
+                <span className="user-row-status" style={{
+                  display: 'inline-block', padding: '4px 10px',
+                  borderRadius: 20, fontSize: 10.5, fontWeight: 700,
+                  backgroundColor: `${t.success}1F`, color: t.success,
+                  width: 'fit-content',
+                }}>
+                  Active
+                </span>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </motion.div>
     </div>
   );
 };
+
 
 export default UserManagement;

@@ -1,14 +1,22 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FiPlus, FiX, FiFolder, FiChevronRight, FiFileText } from 'react-icons/fi';
 import axiosInstance from '../api/axiosInstance';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useTheme } from '../context/ThemeContext';
+import { getTheme } from '../utils/theme';
 
 const ProjectList = () => {
   const [projects, setProjects] = useState([]);
   const [form, setForm] = useState({ name: '', description: '' });
   const [showForm, setShowForm] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const { isDark } = useTheme();
+  const t = getTheme(isDark);
   const navigate = useNavigate();
 
   const fetchProjects = () => {
@@ -22,115 +30,262 @@ const ProjectList = () => {
 
   const handleCreate = async (e) => {
     e.preventDefault();
+    setSubmitting(true);
+    setSubmitError('');
     try {
       await axiosInstance.post('/projects', form);
       setForm({ name: '', description: '' });
       setShowForm(false);
       fetchProjects();
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to create project');
+      setSubmitError(err.response?.data?.message || 'Failed to create project');
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  if (loading) return <div style={styles.loading}>Loading...</div>;
-
   return (
-    <div style={styles.container}>
-      <div style={styles.header}>
-        <h1 style={styles.title}>Projects</h1>
+    <div>
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        style={{
+          display: 'flex', justifyContent: 'space-between',
+          alignItems: 'center', marginBottom: 28, gap: 16, flexWrap: 'wrap',
+        }}>
+        <div>
+          <h1 style={{ fontSize: 26, fontWeight: 800,
+            fontFamily: t.fontDisplay, letterSpacing: '-0.5px',
+            color: t.text, margin: '0 0 4px' }}>
+            Projects
+          </h1>
+          <p style={{ color: t.textSecondary, fontSize: 14, margin: 0 }}>
+            {projects.length} {projects.length === 1 ? 'project' : 'projects'} total
+          </p>
+        </div>
         {user?.role === 'ADMIN' && (
-          <button style={styles.btn} onClick={() => setShowForm(!showForm)}>
-            {showForm ? 'Cancel' : '+ New Project'}
-          </button>
+          <motion.button
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => setShowForm(true)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '11px 18px', background: t.accent,
+              color: '#0A0E14', border: 'none', borderRadius: 10,
+              cursor: 'pointer', fontSize: 13.5, fontWeight: 700,
+              boxShadow: `0 4px 16px ${t.accent}4D`,
+            }}>
+            <FiPlus size={16} /> New Project
+          </motion.button>
         )}
-      </div>
+      </motion.div>
 
-      {showForm && (
-        <div style={styles.formCard}>
-          <h3 style={{ marginBottom: '16px' }}>Create New Project</h3>
-          <form onSubmit={handleCreate}>
-            <input style={styles.input} placeholder="Project name"
-              value={form.name}
-              onChange={e => setForm({...form, name: e.target.value})}
-              required />
-            <textarea style={styles.textarea} placeholder="Description (optional)"
-              value={form.description}
-              onChange={e => setForm({...form, description: e.target.value})} />
-            <button style={styles.btn} type="submit">Create Project</button>
-          </form>
+      {/* Create Project Modal */}
+      <AnimatePresence>
+        {showForm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => !submitting && setShowForm(false)}
+            style={{
+              position: 'fixed', inset: 0,
+              backgroundColor: 'rgba(0,0,0,0.6)',
+              backdropFilter: 'blur(4px)',
+              display: 'flex', alignItems: 'center',
+              justifyContent: 'center', zIndex: 200, padding: 20,
+            }}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              onClick={e => e.stopPropagation()}
+              style={{
+                backgroundColor: t.bgSecondary,
+                borderRadius: 18, padding: 28, width: '100%',
+                maxWidth: 440, border: `1px solid ${t.border}`,
+                boxShadow: '0 24px 80px rgba(0,0,0,0.4)',
+              }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between',
+                alignItems: 'center', marginBottom: 22 }}>
+                <h2 style={{ color: t.text, fontSize: 18, fontWeight: 700,
+                  fontFamily: t.fontDisplay, margin: 0 }}>
+                  Create New Project
+                </h2>
+                <motion.button
+                  whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+                  onClick={() => setShowForm(false)}
+                  style={{ background: 'none', border: 'none',
+                    cursor: 'pointer', color: t.textSecondary, padding: 4 }}>
+                  <FiX size={20} />
+                </motion.button>
+              </div>
+
+              {submitError && (
+                <div style={{
+                  backgroundColor: `${t.accent}1A`, border: `1px solid ${t.accent}4D`,
+                  color: t.accent, padding: '10px 14px', borderRadius: 10,
+                  marginBottom: 16, fontSize: 13,
+                }}>
+                  {submitError}
+                </div>
+              )}
+
+              <form onSubmit={handleCreate}>
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: 'block', marginBottom: 6,
+                    color: t.textSecondary, fontSize: 12.5, fontWeight: 500 }}>
+                    Project name
+                  </label>
+                  <input
+                    placeholder="e.g. Mobile App Redesign"
+                    value={form.name}
+                    onChange={e => setForm({...form, name: e.target.value})}
+                    required
+                    style={{
+                      width: '100%', padding: '11px 14px',
+                      backgroundColor: t.bgTertiary,
+                      border: `1px solid ${t.border}`,
+                      borderRadius: 10, color: t.text,
+                      fontSize: 14, boxSizing: 'border-box', outline: 'none',
+                    }} />
+                </div>
+                <div style={{ marginBottom: 22 }}>
+                  <label style={{ display: 'block', marginBottom: 6,
+                    color: t.textSecondary, fontSize: 12.5, fontWeight: 500 }}>
+                    Description <span style={{ color: t.textMuted }}>(optional)</span>
+                  </label>
+                  <textarea
+                    placeholder="What's this project about?"
+                    value={form.description}
+                    onChange={e => setForm({...form, description: e.target.value})}
+                    style={{
+                      width: '100%', padding: '11px 14px',
+                      backgroundColor: t.bgTertiary,
+                      border: `1px solid ${t.border}`,
+                      borderRadius: 10, color: t.text,
+                      fontSize: 14, boxSizing: 'border-box', outline: 'none',
+                      minHeight: 80, resize: 'vertical', fontFamily: 'inherit',
+                    }} />
+                </div>
+
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button type="button"
+                    onClick={() => setShowForm(false)}
+                    disabled={submitting}
+                    style={{
+                      flex: 1, padding: '12px',
+                      backgroundColor: t.bgTertiary,
+                      border: `1px solid ${t.border}`,
+                      borderRadius: 10, color: t.textSecondary,
+                      cursor: 'pointer', fontSize: 14,
+                    }}>
+                    Cancel
+                  </button>
+                  <motion.button
+                    whileHover={{ scale: submitting ? 1 : 1.02 }}
+                    whileTap={{ scale: submitting ? 1 : 0.98 }}
+                    type="submit" disabled={submitting}
+                    style={{
+                      flex: 1, padding: '12px',
+                      background: submitting ? t.border : t.accent,
+                      border: 'none', borderRadius: 10,
+                      color: submitting ? t.textMuted : '#0A0E14',
+                      cursor: submitting ? 'default' : 'pointer',
+                      fontSize: 14, fontWeight: 700,
+                    }}>
+                    {submitting ? 'Creating…' : 'Create Project'}
+                  </motion.button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Project cards */}
+      {loading ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {[1, 2, 3].map(i => (
+            <motion.div key={i}
+              animate={{ opacity: [0.5, 1, 0.5] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+              style={{ height: 76, backgroundColor: t.bgTertiary, borderRadius: 14 }} />
+          ))}
+        </div>
+      ) : projects.length === 0 ? (
+        <div style={{
+          backgroundColor: t.bgSecondary, borderRadius: 16, padding: 48,
+          border: `1px solid ${t.border}`, textAlign: 'center',
+        }}>
+          <FiFolder size={32} color={t.textMuted} style={{ marginBottom: 12 }} />
+          <p style={{ color: t.textSecondary, fontSize: 14.5, margin: 0 }}>
+            No projects yet{user?.role === 'ADMIN' ? ' — create your first one above.' : '.'}
+          </p>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {projects.map((p, i) => (
+            <motion.div
+              key={p.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
+              whileHover={{ x: 3 }}
+              onClick={() => navigate(`/bugs/project/${p.id}`)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 16,
+                backgroundColor: t.bgSecondary, borderRadius: 14,
+                padding: '18px 20px', border: `1px solid ${t.border}`,
+                boxShadow: t.cardShadow, cursor: 'pointer',
+              }}>
+              <div style={{
+                width: 42, height: 42, borderRadius: 11,
+                backgroundColor: `${t.accent}1A`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
+              }}>
+                <FiFolder size={18} color={t.accent} />
+              </div>
+
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{
+                  color: t.text, fontSize: 15, fontWeight: 700,
+                  fontFamily: t.fontDisplay,
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>
+                  {p.name}
+                </div>
+                {p.description && (
+                  <div style={{
+                    color: t.textSecondary, fontSize: 12.5, marginTop: 2,
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>
+                    {p.description}
+                  </div>
+                )}
+                <div style={{ color: t.textMuted, fontSize: 11.5, marginTop: 4 }}>
+                  Created by {p.createdBy?.name || 'Unknown'}
+                </div>
+              </div>
+
+              <div className="project-card-view-btn" style={{
+                display: 'flex', alignItems: 'center', gap: 5,
+                padding: '6px 12px', borderRadius: 20,
+                backgroundColor: `${t.accent}14`, color: t.accent,
+                fontSize: 12, fontWeight: 600, flexShrink: 0,
+              }}>
+                <FiFileText size={12} />
+                <span className="project-card-view-label">View Bugs</span>
+              </div>
+              <FiChevronRight size={16} color={t.textMuted} style={{ flexShrink: 0 }} className="project-card-chevron" />
+            </motion.div>
+          ))}
         </div>
       )}
-
-      <div style={styles.table}>
-        <div style={styles.tableHeader}>
-          <span>Project Name</span>
-          <span>Description</span>
-          <span>Created By</span>
-          <span>Actions</span>
-        </div>
-        {projects.map(p => (
-          <div key={p.id} style={styles.tableRow}>
-            <span style={styles.projectName}>{p.name}</span>
-            <span style={styles.desc}>{p.description || '—'}</span>
-            <span style={styles.meta}>{p.createdBy?.name}</span>
-            <button style={styles.viewBtn}
-              onClick={() => navigate(`/bugs/project/${p.id}`)}>
-              View Bugs
-            </button>
-          </div>
-        ))}
-      </div>
     </div>
   );
-};
-
-const styles = {
-  container: { padding: '24px', maxWidth: '1200px', margin: '0 auto' },
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' },
-  title: { fontSize: '24px', color: '#1e293b' },
-  formCard: {
-    backgroundColor: '#fff', padding: '24px', borderRadius: '10px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '24px',
-  },
-  input: {
-    display: 'block', width: '100%', padding: '10px 12px',
-    border: '1px solid #d1d5db', borderRadius: '8px',
-    fontSize: '14px', marginBottom: '12px', boxSizing: 'border-box',
-  },
-  textarea: {
-    display: 'block', width: '100%', padding: '10px 12px',
-    border: '1px solid #d1d5db', borderRadius: '8px',
-    fontSize: '14px', marginBottom: '12px', boxSizing: 'border-box',
-    minHeight: '80px',
-  },
-  btn: {
-    padding: '10px 20px', backgroundColor: '#3b82f6', color: '#fff',
-    border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px',
-  },
-  table: {
-    backgroundColor: '#fff', borderRadius: '10px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.08)', overflow: 'hidden',
-  },
-  tableHeader: {
-    display: 'grid', gridTemplateColumns: '2fr 3fr 1fr 1fr',
-    padding: '12px 20px', backgroundColor: '#f8fafc',
-    borderBottom: '1px solid #e2e8f0', fontSize: '13px',
-    fontWeight: '600', color: '#475569',
-  },
-  tableRow: {
-    display: 'grid', gridTemplateColumns: '2fr 3fr 1fr 1fr',
-    padding: '14px 20px', borderBottom: '1px solid #f1f5f9',
-    alignItems: 'center',
-  },
-  projectName: { fontWeight: '500', color: '#1e293b', fontSize: '14px' },
-  desc: { color: '#64748b', fontSize: '13px' },
-  meta: { color: '#94a3b8', fontSize: '13px' },
-  viewBtn: {
-    padding: '6px 12px', backgroundColor: '#eff6ff', color: '#3b82f6',
-    border: '1px solid #bfdbfe', borderRadius: '6px',
-    cursor: 'pointer', fontSize: '12px',
-  },
-  loading: { textAlign: 'center', padding: '60px', color: '#64748b' },
 };
 
 export default ProjectList;

@@ -210,7 +210,7 @@ const Dashboard = () => {
             color: t.textMuted, marginBottom: 10, textTransform: 'uppercase' }}>
             Overview
           </p>
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          <div className="dashboard-mini-stats" style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <MiniStat icon={FiAlertCircle} label="Total Bugs" value={stats.total}
               color={t.textSecondary} t={t} delay={0} />
             <MiniStat icon={FiAlertCircle} label="Open" value={stats.open}

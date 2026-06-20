@@ -1,7 +1,13 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { FiArrowLeft, FiMessageSquare, FiSend } from 'react-icons/fi';
 import axiosInstance from '../api/axiosInstance';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+import { getTheme, priorityConfig, statusConfig } from '../utils/theme';
+
+const STATUS_OPTIONS = ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'];
 
 const BugDetail = () => {
   const { id } = useParams();
@@ -9,11 +15,17 @@ const BugDetail = () => {
   const [comments, setComments] = useState([]);
   const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(true);
+  const [statusUpdating, setStatusUpdating] = useState(false);
+  const [statusError, setStatusError] = useState('');
+  const [commentError, setCommentError] = useState('');
+  const [postingComment, setPostingComment] = useState(false);
   const { user } = useAuth();
+  const { isDark } = useTheme();
+  const t = getTheme(isDark);
+  const navigate = useNavigate();
 
   const fetchBug = useCallback(() => {
-    return axiosInstance.get(`/bugs/${id}`)
-      .then(res => setBug(res.data.data));
+    return axiosInstance.get(`/bugs/${id}`).then(res => setBug(res.data.data));
   }, [id]);
 
   const fetchComments = useCallback(() => {
@@ -22,118 +34,244 @@ const BugDetail = () => {
   }, [id]);
 
   useEffect(() => {
-    Promise.all([fetchBug(), fetchComments()])
-      .finally(() => setLoading(false));
+    Promise.all([fetchBug(), fetchComments()]).finally(() => setLoading(false));
   }, [fetchBug, fetchComments]);
 
   const handleStatusChange = async (newStatus) => {
+    if (newStatus === bug.status) return;
+    setStatusUpdating(true);
+    setStatusError('');
     try {
       await axiosInstance.patch(`/bugs/${id}/status?status=${newStatus}`);
-      fetchBug();
+      await fetchBug();
     } catch (err) {
-      alert('Failed to update status');
+      setStatusError(err.response?.data?.message || 'Failed to update status');
+    } finally {
+      setStatusUpdating(false);
     }
   };
 
   const handleComment = async (e) => {
     e.preventDefault();
     if (!comment.trim()) return;
+    setPostingComment(true);
+    setCommentError('');
     try {
-      await axiosInstance.post('/comments', {
-        content: comment,
-        bugId: parseInt(id)
-      });
+      await axiosInstance.post('/comments', { content: comment, bugId: parseInt(id) });
       setComment('');
-      fetchComments();
+      await fetchComments();
     } catch (err) {
-      alert('Failed to add comment');
+      setCommentError(err.response?.data?.message || 'Failed to add comment');
+    } finally {
+      setPostingComment(false);
     }
   };
 
-  if (loading) return <div style={styles.loading}>Loading...</div>;
-  if (!bug) return <div style={styles.loading}>Bug not found</div>;
-
-  return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <div style={styles.header}>
-          <h1 style={styles.title}>{bug.title}</h1>
-          <div style={styles.badges}>
-            <span style={{...styles.badge, backgroundColor: '#dbeafe'}}>
-              {bug.status}
-            </span>
-            <span style={{...styles.badge, backgroundColor: '#fee2e2'}}>
-              {bug.priority}
-            </span>
-          </div>
-        </div>
-        <p style={styles.desc}>{bug.description}</p>
-        <div style={styles.meta}>
-          <span>Project: <b>{bug.projectName}</b></span>
-          <span>Reporter: <b>{bug.reportedByName}</b></span>
-          <span>Assigned: <b>{bug.assignedToName}</b></span>
-        </div>
-        {(user?.role === 'DEVELOPER' || user?.role === 'ADMIN') && (
-          <div style={styles.statusSection}>
-            <label style={styles.label}>Update Status:</label>
-            <select style={styles.select} value={bug.status}
-              onChange={e => handleStatusChange(e.target.value)}>
-              <option value="OPEN">Open</option>
-              <option value="IN_PROGRESS">In Progress</option>
-              <option value="RESOLVED">Resolved</option>
-              <option value="CLOSED">Closed</option>
-            </select>
-          </div>
-        )}
-      </div>
-
-      <div style={styles.commentsSection}>
-        <h2 style={styles.commentsTitle}>
-          Comments ({comments.length})
-        </h2>
-        <form onSubmit={handleComment} style={styles.commentForm}>
-          <textarea style={styles.textarea}
-            placeholder="Add a comment..."
-            value={comment}
-            onChange={e => setComment(e.target.value)} />
-          <button style={styles.btn} type="submit">
-            Post Comment
-          </button>
-        </form>
-        {comments.map(c => (
-          <div key={c.id} style={styles.comment}>
-            <p style={styles.commentContent}>{c.content}</p>
-            <span style={styles.commentMeta}>
-              {new Date(c.createdAt).toLocaleString()}
-            </span>
-          </div>
-        ))}
-      </div>
+  if (loading) return (
+    <div style={{ display: 'flex', justifyContent: 'center', padding: '80px 0' }}>
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+        style={{ width: 40, height: 40, borderRadius: '50%',
+          border: `3px solid ${t.accent}`, borderTopColor: 'transparent' }} />
     </div>
   );
-};
 
-const styles = {
-  container: { padding: '24px', maxWidth: '900px', margin: '0 auto' },
-  card: { backgroundColor: '#fff', padding: '24px', borderRadius: '10px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: '24px' },
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' },
-  title: { fontSize: '22px', color: '#1e293b', flex: 1 },
-  badges: { display: 'flex', gap: '8px' },
-  badge: { padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600' },
-  desc: { color: '#475569', fontSize: '15px', lineHeight: '1.6', marginBottom: '16px' },
-  meta: { display: 'flex', gap: '24px', color: '#64748b', fontSize: '13px', marginBottom: '16px' },
-  statusSection: { display: 'flex', alignItems: 'center', gap: '12px', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #f1f5f9' },
-  label: { fontSize: '14px', color: '#374151', fontWeight: '500' },
-  select: { padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' },
-  commentsSection: { backgroundColor: '#fff', padding: '24px', borderRadius: '10px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' },
-  commentsTitle: { fontSize: '18px', color: '#1e293b', marginBottom: '16px' },
-  commentForm: { marginBottom: '20px' },
-  textarea: { display: 'block', width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', marginBottom: '10px', boxSizing: 'border-box', minHeight: '80px' },
-  btn: { padding: '10px 20px', backgroundColor: '#3b82f6', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' },
-  comment: { padding: '12px', backgroundColor: '#f8fafc', borderRadius: '8px', marginBottom: '10px' },
-  commentContent: { color: '#374151', fontSize: '14px', marginBottom: '6px' },
-  commentMeta: { color: '#94a3b8', fontSize: '12px' },
-  loading: { textAlign: 'center', padding: '60px', color: '#64748b' },
+  if (!bug) return (
+    <div style={{ textAlign: 'center', padding: '80px 0', color: t.textMuted }}>
+      Bug not found.
+    </div>
+  );
+
+  const statusInfo = statusConfig[bug.status] || statusConfig.OPEN;
+  const priorityInfo = priorityConfig[bug.priority] || priorityConfig.LOW;
+  const canUpdateStatus = user?.role === 'DEVELOPER' || user?.role === 'ADMIN';
+
+  return (
+    <div style={{ maxWidth: 820, margin: '0 auto' }}>
+      <motion.button
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+        whileHover={{ x: -3 }}
+        onClick={() => navigate(-1)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 6,
+          background: 'none', border: 'none', cursor: 'pointer',
+          color: t.textSecondary, fontSize: 13, marginBottom: 16, padding: 0,
+        }}>
+        <FiArrowLeft size={15} /> Back
+      </motion.button>
+
+      <motion.div
+        initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+        style={{
+          backgroundColor: t.bgSecondary, borderRadius: 18,
+          padding: 28, border: `1px solid ${t.border}`,
+          boxShadow: t.cardShadow, marginBottom: 20,
+        }}>
+        <div style={{
+          display: 'flex', justifyContent: 'space-between',
+          alignItems: 'flex-start', gap: 16, marginBottom: 16, flexWrap: 'wrap',
+        }}>
+          <h1 style={{
+            fontSize: 21, fontWeight: 800, fontFamily: t.fontDisplay,
+            color: t.text, margin: 0, flex: '1 1 280px', lineHeight: 1.3,
+          }}>
+            {bug.title}
+          </h1>
+          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+            <span style={{
+              padding: '5px 12px', borderRadius: 20, fontSize: 11,
+              fontWeight: 700, letterSpacing: '0.3px',
+              color: priorityInfo.color, backgroundColor: priorityInfo.bg,
+            }}>
+              {priorityInfo.label.toUpperCase()}
+            </span>
+            <span style={{
+              padding: '5px 12px', borderRadius: 20, fontSize: 11,
+              fontWeight: 700, letterSpacing: '0.3px',
+              color: statusInfo.color, backgroundColor: statusInfo.bg,
+            }}>
+              {statusInfo.label.toUpperCase()}
+            </span>
+          </div>
+        </div>
+
+        <p style={{
+          color: t.textSecondary, fontSize: 14.5, lineHeight: 1.65,
+          marginBottom: 20, whiteSpace: 'pre-wrap',
+        }}>
+          {bug.description}
+        </p>
+
+        <div style={{
+          display: 'flex', gap: 24, flexWrap: 'wrap',
+          paddingTop: 16, borderTop: `1px solid ${t.border}`,
+          fontSize: 12.5, color: t.textMuted,
+        }}>
+          <span>Project: <strong style={{ color: t.textSecondary }}>{bug.projectName}</strong></span>
+          <span>Reporter: <strong style={{ color: t.textSecondary }}>{bug.reportedByName}</strong></span>
+          {bug.assignedToName && (
+            <span>Assigned: <strong style={{ color: t.textSecondary }}>{bug.assignedToName}</strong></span>
+          )}
+        </div>
+
+        {canUpdateStatus && (
+          <div style={{
+            marginTop: 20, paddingTop: 20, borderTop: `1px solid ${t.border}`,
+          }}>
+            <label style={{
+              display: 'block', marginBottom: 10, fontSize: 12.5,
+              fontWeight: 600, color: t.textSecondary,
+            }}>
+              Update status
+            </label>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {STATUS_OPTIONS.map(s => {
+                const info = statusConfig[s];
+                const active = bug.status === s;
+                return (
+                  <motion.button
+                    key={s}
+                    whileHover={{ scale: statusUpdating ? 1 : 1.03 }}
+                    whileTap={{ scale: statusUpdating ? 1 : 0.97 }}
+                    disabled={statusUpdating}
+                    onClick={() => handleStatusChange(s)}
+                    style={{
+                      padding: '8px 14px', borderRadius: 10, fontSize: 12.5,
+                      fontWeight: 600, cursor: statusUpdating ? 'default' : 'pointer',
+                      border: `1.5px solid ${active ? info.color : t.border}`,
+                      backgroundColor: active ? info.bg : 'transparent',
+                      color: active ? info.color : t.textSecondary,
+                      opacity: statusUpdating ? 0.6 : 1,
+                    }}>
+                    {info.label}
+                  </motion.button>
+                );
+              })}
+            </div>
+            {statusError && (
+              <p style={{ color: t.accent, fontSize: 12.5, marginTop: 10 }}>{statusError}</p>
+            )}
+          </div>
+        )}
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        style={{
+          backgroundColor: t.bgSecondary, borderRadius: 18,
+          padding: 28, border: `1px solid ${t.border}`,
+          boxShadow: t.cardShadow,
+        }}>
+        <h2 style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          fontSize: 16, fontWeight: 700, fontFamily: t.fontDisplay,
+          color: t.text, margin: '0 0 18px',
+        }}>
+          <FiMessageSquare size={16} color={t.textMuted} />
+          Comments <span style={{ color: t.textMuted, fontWeight: 500 }}>({comments.length})</span>
+        </h2>
+
+        <form onSubmit={handleComment} style={{ marginBottom: 24 }}>
+          <textarea
+            placeholder="Add a comment…"
+            value={comment}
+            onChange={e => setComment(e.target.value)}
+            style={{
+              width: '100%', padding: '12px 14px',
+              backgroundColor: t.bgTertiary, border: `1px solid ${t.border}`,
+              borderRadius: 12, color: t.text, fontSize: 13.5,
+              boxSizing: 'border-box', minHeight: 80, resize: 'vertical',
+              fontFamily: 'inherit', marginBottom: 10, outline: 'none',
+            }} />
+          {commentError && (
+            <p style={{ color: t.accent, fontSize: 12.5, marginBottom: 10 }}>{commentError}</p>
+          )}
+          <motion.button
+            whileHover={{ scale: postingComment ? 1 : 1.03 }}
+            whileTap={{ scale: postingComment ? 1 : 0.97 }}
+            type="submit" disabled={postingComment || !comment.trim()}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 7,
+              padding: '10px 18px',
+              background: (postingComment || !comment.trim()) ? t.bgTertiary : t.accent,
+              color: (postingComment || !comment.trim()) ? t.textMuted : '#0A0E14',
+              border: 'none', borderRadius: 10,
+              cursor: (postingComment || !comment.trim()) ? 'default' : 'pointer',
+              fontSize: 13, fontWeight: 700,
+            }}>
+            <FiSend size={13} /> {postingComment ? 'Posting…' : 'Post Comment'}
+          </motion.button>
+        </form>
+
+        {comments.length === 0 ? (
+          <p style={{ color: t.textMuted, fontSize: 13.5 }}>No comments yet.</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {comments.map((c, i) => (
+              <motion.div
+                key={c.id}
+                initial={{ opacity: 0, x: 8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.04 }}
+                style={{
+                  padding: '14px 16px', backgroundColor: t.bgTertiary,
+                  borderRadius: 12,
+                }}>
+                <p style={{ color: t.text, fontSize: 13.5, lineHeight: 1.5, margin: '0 0 8px' }}>
+                  {c.content}
+                </p>
+                <span style={{ color: t.textMuted, fontSize: 11.5 }}>
+                  {new Date(c.createdAt).toLocaleString()}
+                </span>
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </motion.div>
+    </div>
+  );
 };
 
 export default BugDetail;

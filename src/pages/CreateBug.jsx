@@ -1,6 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import {
+  FiCpu, FiTarget, FiFileText, FiGitMerge,
+  FiAlertTriangle, FiCheckCircle, FiArrowLeft
+} from 'react-icons/fi';
 import axiosInstance from '../api/axiosInstance';
+import { useTheme } from '../context/ThemeContext';
+import { getTheme } from '../utils/theme';
 
 const CreateBug = () => {
   const [form, setForm] = useState({
@@ -9,68 +16,59 @@ const CreateBug = () => {
   });
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [aiLoading, setAiLoading] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [aiLoading, setAiLoading] = useState(null); // tracks which AI action is running
+  const [aiError, setAiError] = useState('');
   const [reproSteps, setReproSteps] = useState('');
   const [duplicateWarning, setDuplicateWarning] = useState('');
   const navigate = useNavigate();
+  const { isDark } = useTheme();
+  const t = getTheme(isDark);
 
   useEffect(() => {
     axiosInstance.get('/projects')
       .then(res => setProjects(res.data.data || []));
   }, []);
 
-  const handleSuggestPriority = async () => {
-    if (!form.description) return alert('Enter description first');
-    setAiLoading(true);
+  const runAiAction = async (action, validate, request, onSuccess) => {
+    setAiError('');
+    if (!validate()) return;
+    setAiLoading(action);
     try {
-      const res = await axiosInstance.post('/ai/suggest-priority', {
-        description: form.description
-      });
-      setForm(f => ({ ...f, priority: res.data.data }));
+      const res = await request();
+      onSuccess(res);
     } catch (e) {
-      alert('AI unavailable');
+      setAiError('AI service is unavailable right now — try again in a moment.');
     } finally {
-      setAiLoading(false);
+      setAiLoading(null);
     }
   };
 
-  const handleGenerateSteps = async () => {
-    if (!form.title || !form.description)
-      return alert('Enter title and description first');
-    setAiLoading(true);
-    try {
-      const res = await axiosInstance.post('/ai/reproduction-steps', {
-        title: form.title,
-        description: form.description
-      });
-      setReproSteps(res.data.data);
-    } catch (e) {
-      alert('AI unavailable');
-    } finally {
-      setAiLoading(false);
-    }
-  };
+  const handleSuggestPriority = () => runAiAction(
+    'priority',
+    () => !!form.description || (setAiError('Enter a description first'), false),
+    () => axiosInstance.post('/ai/suggest-priority', { description: form.description }),
+    res => setForm(f => ({ ...f, priority: res.data.data }))
+  );
 
-  const handleCheckDuplicate = async () => {
-    if (!form.description || !form.projectId)
-      return alert('Enter description and select project first');
-    setAiLoading(true);
-    try {
-      const res = await axiosInstance.post('/ai/check-duplicate', {
-        description: form.description,
-        projectId: form.projectId
-      });
-      setDuplicateWarning(res.data.data);
-    } catch (e) {
-      alert('AI unavailable');
-    } finally {
-      setAiLoading(false);
-    }
-  };
+  const handleGenerateSteps = () => runAiAction(
+    'steps',
+    () => (!!form.title && !!form.description) || (setAiError('Enter a title and description first'), false),
+    () => axiosInstance.post('/ai/reproduction-steps', { title: form.title, description: form.description }),
+    res => setReproSteps(res.data.data)
+  );
+
+  const handleCheckDuplicate = () => runAiAction(
+    'duplicate',
+    () => (!!form.description && !!form.projectId) || (setAiError('Enter a description and select a project first'), false),
+    () => axiosInstance.post('/ai/check-duplicate', { description: form.description, projectId: form.projectId }),
+    res => setDuplicateWarning(res.data.data)
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setSubmitError('');
     try {
       const payload = {
         title: form.title,
@@ -79,110 +77,212 @@ const CreateBug = () => {
           : form.description,
         priority: form.priority,
         projectId: parseInt(form.projectId),
-        assignedToId: form.assignedToId
-          ? parseInt(form.assignedToId) : null,
+        assignedToId: form.assignedToId ? parseInt(form.assignedToId) : null,
       };
       await axiosInstance.post('/bugs', payload);
       navigate(`/bugs/project/${form.projectId}`);
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to create bug');
+      setSubmitError(err.response?.data?.message || 'Failed to create bug');
     } finally {
       setLoading(false);
     }
   };
 
+  const isDuplicateAlert = duplicateWarning.startsWith('DUPLICATE');
+
+  const aiButtons = [
+    { key: 'priority', icon: FiTarget, label: 'Suggest Priority', onClick: handleSuggestPriority },
+    { key: 'steps', icon: FiFileText, label: 'Generate Steps', onClick: handleGenerateSteps },
+    { key: 'duplicate', icon: FiGitMerge, label: 'Check Duplicate', onClick: handleCheckDuplicate },
+  ];
+
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <h1 style={styles.title}>Report New Bug</h1>
+    <div style={{ maxWidth: 700, margin: '0 auto' }}>
+      <motion.button
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+        whileHover={{ x: -3 }}
+        onClick={() => navigate(-1)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 6,
+          background: 'none', border: 'none', cursor: 'pointer',
+          color: t.textSecondary, fontSize: 13, marginBottom: 16, padding: 0,
+        }}>
+        <FiArrowLeft size={15} /> Back
+      </motion.button>
+
+      <motion.div
+        initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+        style={{
+          backgroundColor: t.bgSecondary, borderRadius: 18, padding: 28,
+          border: `1px solid ${t.border}`, boxShadow: t.cardShadow,
+        }}>
+        <h1 style={{
+          fontSize: 22, fontWeight: 800, fontFamily: t.fontDisplay,
+          color: t.text, margin: '0 0 18px',
+        }}>
+          Report New Bug
+        </h1>
 
         {/* AI Banner */}
-        <div style={styles.aiBanner}>
-          <span style={styles.aiIcon}>🤖</span>
-          <span style={styles.aiText}>
-            AI-Powered Triage — auto-suggest priority,
-            detect duplicates, generate reproduction steps
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          backgroundColor: `${t.accent}14`, border: `1px solid ${t.accent}33`,
+          borderRadius: 12, padding: '12px 16px', marginBottom: 22,
+        }}>
+          <FiCpu size={18} color={t.accent} style={{ flexShrink: 0 }} />
+          <span style={{ color: t.textSecondary, fontSize: 12.5, lineHeight: 1.4 }}>
+            AI-powered triage — auto-suggest priority, detect duplicates,
+            and generate reproduction steps.
           </span>
         </div>
 
+        {submitError && (
+          <div style={{
+            backgroundColor: `${t.accent}1A`, border: `1px solid ${t.accent}4D`,
+            color: t.accent, padding: '10px 14px', borderRadius: 10,
+            marginBottom: 16, fontSize: 13,
+          }}>
+            {submitError}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit}>
-          <div style={styles.field}>
-            <label style={styles.label}>Title</label>
-            <input style={styles.input} placeholder="Bug title"
+          <div style={{ marginBottom: 18 }}>
+            <label style={{ display: 'block', marginBottom: 6,
+              color: t.textSecondary, fontSize: 12.5, fontWeight: 500 }}>
+              Title
+            </label>
+            <input
+              placeholder="Short, descriptive bug title"
               value={form.title}
-              onChange={e => setForm({...form, title: e.target.value})}
-              required />
+              onChange={e => setForm({ ...form, title: e.target.value })}
+              required
+              style={{
+                width: '100%', padding: '11px 14px',
+                backgroundColor: t.bgTertiary, border: `1px solid ${t.border}`,
+                borderRadius: 10, color: t.text, fontSize: 14,
+                boxSizing: 'border-box', outline: 'none',
+              }} />
           </div>
 
-          <div style={styles.field}>
-            <label style={styles.label}>Description</label>
-            <textarea style={styles.textarea}
-              placeholder="Describe the bug in plain language..."
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: 'block', marginBottom: 6,
+              color: t.textSecondary, fontSize: 12.5, fontWeight: 500 }}>
+              Description
+            </label>
+            <textarea
+              placeholder="Describe the bug in plain language…"
               value={form.description}
-              onChange={e => setForm({...form, description: e.target.value})}
-              required />
-            {/* AI Buttons */}
-            <div style={styles.aiButtons}>
-              <button type="button" style={styles.aiBtn}
-                onClick={handleSuggestPriority} disabled={aiLoading}>
-                🎯 Suggest Priority
-              </button>
-              <button type="button" style={styles.aiBtn}
-                onClick={handleGenerateSteps} disabled={aiLoading}>
-                📋 Generate Steps
-              </button>
-              <button type="button" style={styles.aiBtn}
-                onClick={handleCheckDuplicate} disabled={aiLoading}>
-                🔍 Check Duplicate
-              </button>
+              onChange={e => setForm({ ...form, description: e.target.value })}
+              required
+              style={{
+                width: '100%', padding: '11px 14px',
+                backgroundColor: t.bgTertiary, border: `1px solid ${t.border}`,
+                borderRadius: 10, color: t.text, fontSize: 14,
+                boxSizing: 'border-box', minHeight: 110, resize: 'vertical',
+                fontFamily: 'inherit', outline: 'none',
+              }} />
+
+            {/* AI action buttons */}
+            <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+              {aiButtons.map(({ key, icon: Icon, label, onClick }) => (
+                <motion.button
+                  key={key} type="button"
+                  whileHover={{ scale: aiLoading ? 1 : 1.03 }}
+                  whileTap={{ scale: aiLoading ? 1 : 0.97 }}
+                  onClick={onClick} disabled={!!aiLoading}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '7px 13px', borderRadius: 20,
+                    border: `1px solid ${t.border}`,
+                    backgroundColor: t.bgTertiary,
+                    color: t.textSecondary, fontSize: 12,
+                    cursor: aiLoading ? 'default' : 'pointer',
+                    opacity: aiLoading && aiLoading !== key ? 0.5 : 1,
+                  }}>
+                  <Icon size={12} color={t.accent} />
+                  {aiLoading === key ? 'Working…' : label}
+                </motion.button>
+              ))}
             </div>
-            {aiLoading && (
-              <p style={styles.aiStatus}>🤖 AI is thinking...</p>
+            {aiError && (
+              <p style={{ color: t.accent, fontSize: 12, marginTop: 8 }}>{aiError}</p>
             )}
           </div>
 
-          {/* Duplicate Warning */}
+          {/* Duplicate warning */}
           {duplicateWarning && (
             <div style={{
-              ...styles.alert,
-              backgroundColor: duplicateWarning.startsWith('DUPLICATE')
-                ? '#fee2e2' : '#d1fae5',
-              borderColor: duplicateWarning.startsWith('DUPLICATE')
-                ? '#fca5a5' : '#6ee7b7',
+              display: 'flex', alignItems: 'flex-start', gap: 9,
+              padding: '11px 14px', borderRadius: 10, marginBottom: 16,
+              fontSize: 12.5, lineHeight: 1.5,
+              backgroundColor: isDuplicateAlert ? `${t.accent}14` : `${t.success}14`,
+              border: `1px solid ${isDuplicateAlert ? t.accent : t.success}4D`,
+              color: isDuplicateAlert ? t.accent : t.success,
             }}>
-              {duplicateWarning.startsWith('DUPLICATE')
-                ? '⚠️ ' : '✅ '}{duplicateWarning}
+              {isDuplicateAlert
+                ? <FiAlertTriangle size={14} style={{ flexShrink: 0, marginTop: 1 }} />
+                : <FiCheckCircle size={14} style={{ flexShrink: 0, marginTop: 1 }} />}
+              <span>{duplicateWarning}</span>
             </div>
           )}
 
-          {/* Reproduction Steps */}
+          {/* Generated repro steps */}
           {reproSteps && (
-            <div style={styles.field}>
-              <label style={styles.label}>
-                AI Generated Reproduction Steps
+            <div style={{ marginBottom: 18 }}>
+              <label style={{ display: 'block', marginBottom: 6,
+                color: t.textSecondary, fontSize: 12.5, fontWeight: 500 }}>
+                AI-generated reproduction steps
               </label>
-              <textarea style={{...styles.textarea, backgroundColor: '#f0fdf4'}}
+              <textarea
                 value={reproSteps}
-                onChange={e => setReproSteps(e.target.value)} />
+                onChange={e => setReproSteps(e.target.value)}
+                style={{
+                  width: '100%', padding: '11px 14px',
+                  backgroundColor: `${t.success}0D`, border: `1px solid ${t.success}33`,
+                  borderRadius: 10, color: t.text, fontSize: 13.5,
+                  boxSizing: 'border-box', minHeight: 100, resize: 'vertical',
+                  fontFamily: 'inherit', outline: 'none',
+                }} />
             </div>
           )}
 
-          <div style={styles.row}>
-            <div style={{...styles.field, flex: 1}}>
-              <label style={styles.label}>Priority</label>
-              <select style={styles.input} value={form.priority}
-                onChange={e => setForm({...form, priority: e.target.value})}>
+          <div style={{ display: 'flex', gap: 14, marginBottom: 22, flexWrap: 'wrap' }}>
+            <div style={{ flex: '1 1 160px' }}>
+              <label style={{ display: 'block', marginBottom: 6,
+                color: t.textSecondary, fontSize: 12.5, fontWeight: 500 }}>
+                Priority
+              </label>
+              <select
+                value={form.priority}
+                onChange={e => setForm({ ...form, priority: e.target.value })}
+                style={{
+                  width: '100%', padding: '11px 14px',
+                  backgroundColor: t.bgTertiary, border: `1px solid ${t.border}`,
+                  borderRadius: 10, color: t.text, fontSize: 14,
+                  boxSizing: 'border-box', outline: 'none',
+                }}>
                 <option value="LOW">Low</option>
                 <option value="MEDIUM">Medium</option>
                 <option value="HIGH">High</option>
                 <option value="CRITICAL">Critical</option>
               </select>
             </div>
-            <div style={{...styles.field, flex: 1}}>
-              <label style={styles.label}>Project</label>
-              <select style={styles.input} value={form.projectId}
-                onChange={e => setForm({...form, projectId: e.target.value})}
-                required>
+            <div style={{ flex: '1 1 160px' }}>
+              <label style={{ display: 'block', marginBottom: 6,
+                color: t.textSecondary, fontSize: 12.5, fontWeight: 500 }}>
+                Project
+              </label>
+              <select
+                value={form.projectId}
+                onChange={e => setForm({ ...form, projectId: e.target.value })}
+                required
+                style={{
+                  width: '100%', padding: '11px 14px',
+                  backgroundColor: t.bgTertiary, border: `1px solid ${t.border}`,
+                  borderRadius: 10, color: t.text, fontSize: 14,
+                  boxSizing: 'border-box', outline: 'none',
+                }}>
                 <option value="">Select project</option>
                 {projects.map(p => (
                   <option key={p.id} value={p.id}>{p.name}</option>
@@ -191,38 +291,34 @@ const CreateBug = () => {
             </div>
           </div>
 
-          <div style={styles.btnRow}>
-            <button type="button" style={styles.cancelBtn}
-              onClick={() => navigate(-1)}>Cancel</button>
-            <button type="submit" style={styles.btn} disabled={loading}>
-              {loading ? 'Submitting...' : 'Report Bug'}
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+            <button type="button" onClick={() => navigate(-1)}
+              style={{
+                padding: '11px 22px', backgroundColor: t.bgTertiary,
+                color: t.textSecondary, border: `1px solid ${t.border}`,
+                borderRadius: 10, cursor: 'pointer', fontSize: 13.5,
+              }}>
+              Cancel
             </button>
+            <motion.button
+              whileHover={{ scale: loading ? 1 : 1.03 }}
+              whileTap={{ scale: loading ? 1 : 0.97 }}
+              type="submit" disabled={loading}
+              style={{
+                padding: '11px 26px',
+                background: loading ? t.bgTertiary : t.accent,
+                color: loading ? t.textMuted : '#0A0E14',
+                border: 'none', borderRadius: 10,
+                cursor: loading ? 'default' : 'pointer',
+                fontSize: 13.5, fontWeight: 700,
+              }}>
+              {loading ? 'Submitting…' : 'Report Bug'}
+            </motion.button>
           </div>
         </form>
-      </div>
+      </motion.div>
     </div>
   );
-};
-
-const styles = {
-  container: { padding: '24px', maxWidth: '700px', margin: '0 auto' },
-  card: { backgroundColor: '#fff', padding: '32px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' },
-  title: { fontSize: '22px', color: '#1e293b', marginBottom: '16px' },
-  aiBanner: { display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '10px 14px', marginBottom: '20px' },
-  aiIcon: { fontSize: '20px' },
-  aiText: { color: '#1d4ed8', fontSize: '13px' },
-  field: { marginBottom: '16px' },
-  label: { display: 'block', marginBottom: '6px', color: '#374151', fontSize: '14px', fontWeight: '500' },
-  input: { width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', boxSizing: 'border-box' },
-  textarea: { width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', boxSizing: 'border-box', minHeight: '100px' },
-  aiButtons: { display: 'flex', gap: '8px', marginTop: '8px', flexWrap: 'wrap' },
-  aiBtn: { padding: '6px 12px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', color: '#475569' },
-  aiStatus: { color: '#6366f1', fontSize: '13px', marginTop: '6px' },
-  alert: { padding: '10px 14px', borderRadius: '8px', border: '1px solid', marginBottom: '16px', fontSize: '13px' },
-  row: { display: 'flex', gap: '16px' },
-  btnRow: { display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' },
-  btn: { padding: '10px 24px', backgroundColor: '#3b82f6', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' },
-  cancelBtn: { padding: '10px 24px', backgroundColor: '#f1f5f9', color: '#475569', border: '1px solid #d1d5db', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' },
 };
 
 export default CreateBug;
